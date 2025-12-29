@@ -1,0 +1,29 @@
+{
+  "name": "nestjs-microservices-task",
+  "version": "1.0.0",
+  "description": "NestJS microservices monorepo",
+  "private": true,
+  "workspaces": [
+    "services/service-a",
+    "services/service-b",
+    "services/libs/*"
+  ],
+  "scripts": {
+    "build:libs": "npm run build --workspaces --if-present --workspace=services/libs/*",
+    "build:services": "npm run build --workspaces --if-present --workspace=services/service-*",
+    "build:all": "npm run build:libs && npm run build:services",
+    "install:all": "npm install",
+    "clean": "npm run clean --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@nestjs/common": "^11.0.1",
+    "@types/node": "^22.10.7",
+    "typescript": "^5.7.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
+

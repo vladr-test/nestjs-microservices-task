@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { MongoModule } from '../../libs/mongo/src/mongo.module';
-import { RedisModule } from '../../libs/redis/src/redis.module';
+import { MongoModule } from '../../libs/mongo/src';
+import { RedisModule } from '../../libs/redis/src';
 import { DataModule } from './data/data.module';
 import { RecordsModule } from './records/records.module';
 import { EventsModule } from './events/events.module';

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { MongoService } from '../../../libs/mongo/src/mongo.service';
+import { MongoService } from '../../../libs/mongo/src';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import ExcelJS from 'exceljs';

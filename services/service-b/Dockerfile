@@ -15,19 +15,16 @@ RUN apk add --no-cache \
     ttf-dejavu \
     ttf-liberation
 
-# Update font cache
 RUN fc-cache -f -v
+
+COPY package.json ./
 
 COPY services/ ./services/
 
-WORKDIR /app/services/libs/mongo
-RUN npm install
-
-WORKDIR /app/services/libs/redis
 RUN npm install
 
 WORKDIR /app/services/service-b
-RUN npm install && npm rebuild canvas --build-from-source
+RUN npm rebuild canvas --build-from-source
 
 WORKDIR /app/services/libs/mongo
 RUN npm run build

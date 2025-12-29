@@ -150,15 +150,18 @@ rm -rf ./services/service-a/uploads/*
 
 ## Project Structure
 
+This is a **monorepo** using npm workspaces for efficient dependency management:
+
 ```
 nestjs-microservices-task/
+├── package.json                # Root workspace configuration
 ├── docker-compose.yml          # Docker Compose configuration
 ├── .env.example                # Environment variables template
 ├── services/
-│   ├── libs/                   # Shared libraries
-│   │   ├── mongo/              # MongoDB module
-│   │   ├── redis/              # Redis module
-│   │   └── messaging/          # Messaging module
+│   ├── libs/                   # Shared libraries (workspace packages)
+│   │   ├── mongo/              # MongoDB module (@libs/mongo)
+│   │   ├── redis/              # Redis module (@libs/redis)
+│   │   └── messaging/          # Messaging module (@libs/messaging)
 │   ├── service-a/              # Service A application
 │   │   ├── src/
 │   │   │   ├── data/           # Data module
@@ -169,6 +172,6 @@ nestjs-microservices-task/
 │       ├── src/
 │       │   ├── logs/           # Logs module
 │       │   ├── reports/        # Reports module
-│       │   └── events/         # Events module
+│       │   └── events/          # Events module
 │       └── Dockerfile
 ```

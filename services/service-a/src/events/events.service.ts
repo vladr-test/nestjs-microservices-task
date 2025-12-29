@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RedisService } from '../../../libs/redis/src/redis.service';
+import { RedisService } from '../../../libs/redis/src';
 
 @Injectable()
 export class EventsService {

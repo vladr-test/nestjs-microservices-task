@@ -2,15 +2,10 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+COPY package.json ./
+
 COPY services/ ./services/
 
-WORKDIR /app/services/libs/mongo
-RUN npm install
-
-WORKDIR /app/services/libs/redis
-RUN npm install
-
-WORKDIR /app/services/service-a
 RUN npm install
 
 WORKDIR /app/services/libs/mongo

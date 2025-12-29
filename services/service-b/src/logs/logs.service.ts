@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { MongoService } from '../../../libs/mongo/src/mongo.service';
+import { MongoService } from '../../../libs/mongo/src';
 import { ObjectId } from 'mongodb';
 
 export interface LogEntry {
