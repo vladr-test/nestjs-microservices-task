@@ -48,3 +48,4 @@ export class SearchDto {
   @IsOptional()
   sortOrder?: 'asc' | 'desc' = 'asc';
 }
+

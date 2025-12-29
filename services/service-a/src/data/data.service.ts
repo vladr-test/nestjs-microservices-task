@@ -10,7 +10,7 @@ import axios, { AxiosError, AxiosResponse } from 'axios';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import ExcelJS from 'exceljs';
-import { FileFormat } from '../dto';
+import { FileFormat } from './fetch-data.dto';
 
 @Injectable()
 export class DataService {

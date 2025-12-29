@@ -15,9 +15,19 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { ApiTags, ApiOperation, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiConsumes,
+  ApiBody,
+  ApiOkResponse,
+  ApiBadRequestResponse,
+  ApiNotFoundResponse,
+  ApiGatewayTimeoutResponse,
+  ApiInternalServerErrorResponse,
+} from '@nestjs/swagger';
 import { DataService } from './data.service';
-import { FetchDataDto } from '../dto';
+import { FetchDataDto } from './fetch-data.dto';
 import { RecordsService } from '../records/records.service';
 import { EventsService } from '../events/events.service';
 import { MulterExceptionFilter } from '../common/filters/multer-exception.filter';
@@ -37,6 +47,80 @@ export class DataController {
   @Post('fetch')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Fetch data from public API and save to file' })
+  @ApiOkResponse({
+    description: 'Data fetched and saved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Data fetched and saved successfully',
+        },
+        filepath: {
+          type: 'string',
+          example: '/app/data/data_1234567890.json',
+        },
+        recordCount: { type: 'number', example: 10 },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description:
+      'Invalid request - URL format, filename validation, or empty data',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 400 },
+        message: {
+          type: 'string',
+          example: 'URL must be a valid HTTP or HTTPS URL',
+        },
+        error: {
+          type: 'string',
+          example: 'Bad Request',
+        },
+      },
+    },
+  })
+  @ApiNotFoundResponse({
+    description: 'API endpoint not found or URL cannot be reached',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 404 },
+        message: { type: 'string', example: 'The requested URL was not found' },
+        error: { type: 'string', example: 'Not Found' },
+      },
+    },
+  })
+  @ApiGatewayTimeoutResponse({
+    description: 'Request timeout or API server error',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 504 },
+        message: {
+          type: 'string',
+          example: 'Request timed out after 30 seconds',
+        },
+        error: { type: 'string', example: 'Gateway Timeout' },
+      },
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Internal server error during data fetch or file save',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 500 },
+        message: {
+          type: 'string',
+          example: 'An unexpected error occurred while fetching data',
+        },
+        error: { type: 'string', example: 'Internal Server Error' },
+      },
+    },
+  })
   async fetchData(@Body() dto: FetchDataDto) {
     const startTime = Date.now();
     try {
@@ -135,6 +219,54 @@ export class DataController {
           type: 'string',
           format: 'binary',
         },
+      },
+    },
+  })
+  @ApiOkResponse({
+    description: 'File uploaded and processed successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'File uploaded and processed successfully',
+        },
+        filename: { type: 'string', example: 'data.xlsx' },
+        recordCount: { type: 'number', example: 100 },
+        insertedCount: { type: 'number', example: 100 },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description:
+      'Invalid file - missing file, unsupported format, empty file, invalid content, or no records inserted',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 400 },
+        message: {
+          type: 'string',
+          example: 'No file uploaded or file was rejected',
+        },
+        error: {
+          type: 'string',
+          example: 'Bad Request',
+        },
+      },
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    description:
+      'Internal server error during file processing or database insertion',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 500 },
+        message: {
+          type: 'string',
+          example: 'An unexpected error occurred while processing the file',
+        },
+        error: { type: 'string', example: 'Internal Server Error' },
       },
     },
   })
