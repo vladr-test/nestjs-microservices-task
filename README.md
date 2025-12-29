@@ -156,7 +156,7 @@ This is a **monorepo** using npm workspaces for efficient dependency management:
 nestjs-microservices-task/
 ├── package.json                # Root workspace configuration
 ├── docker-compose.yml          # Docker Compose configuration
-├── .env.example                # Environment variables template
+├── README.md                   # This file
 ├── services/
 │   ├── libs/                   # Shared libraries (workspace packages)
 │   │   ├── mongo/              # MongoDB module (@libs/mongo)
@@ -164,14 +164,27 @@ nestjs-microservices-task/
 │   │   └── messaging/          # Messaging module (@libs/messaging)
 │   ├── service-a/              # Service A application
 │   │   ├── src/
-│   │   │   ├── data/           # Data module
-│   │   │   ├── records/        # Records module
-│   │   │   └── events/         # Events module
-│   │   └── Dockerfile
+│   │   │   ├── common/         # Shared utilities
+│   │   │   │   ├── filters/    # Exception filters
+│   │   │   │   └── services/   # Custom services (HttpService)
+│   │   │   ├── data/           # Data fetching and file operations
+│   │   │   ├── records/        # Record search and retrieval
+│   │   │   ├── events/         # Event publishing
+│   │   │   ├── app.module.ts   # App module (for testing)
+│   │   │   └── main.ts         # Application bootstrap (standalone)
+│   │   ├── data/               # Data files directory
+│   │   ├── uploads/            # Uploaded files directory
+│   │   ├── Dockerfile
+│   │   └── README.md           # Service A documentation
 │   └── service-b/              # Service B application
 │       ├── src/
-│       │   ├── logs/           # Logs module
-│       │   ├── reports/        # Reports module
-│       │   └── events/          # Events module
-│       └── Dockerfile
+│       │   ├── common/         # Shared utilities
+│       │   │   └── filters/    # Exception filters
+│       │   ├── logs/           # Log querying
+│       │   ├── reports/        # PDF report generation
+│       │   ├── events/         # Event subscription
+│       │   ├── app.module.ts   # App module (for testing)
+│       │   └── main.ts         # Application bootstrap (standalone)
+│       ├── Dockerfile
+│       └── README.md           # Service B documentation
 ```
