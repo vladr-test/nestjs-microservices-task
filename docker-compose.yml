@@ -1,0 +1,73 @@
+version: '3.9'
+
+services:
+  mongo:
+    image: mongo:6
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: service_a_db
+    networks:
+      - microservices-network
+
+  redis:
+    image: redis/redis-stack-server:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - microservices-network
+
+  service-a:
+    build:
+      context: .
+      dockerfile: ./services/service-a/Dockerfile
+    container_name: service-a
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongo
+      - redis
+    environment:
+      SERVICE_A_PORT: 3000
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DB_NAME: service_a_db
+      REDIS_URI: redis://redis:6379
+    volumes:
+      - ./services/service-a/data:/app/services/service-a/data
+      - ./services/service-a/uploads:/app/services/service-a/uploads
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  service-b:
+    build:
+      context: .
+      dockerfile: ./services/service-b/Dockerfile
+    container_name: service-b
+    ports:
+      - "3002:3002"
+    depends_on:
+      - mongo
+      - redis
+    environment:
+      SERVICE_B_PORT: 3002
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DB_NAME: service_b_db
+      REDIS_URI: redis://redis:6379
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+  redis_data:
+
+networks:
+  microservices-network:
+    driver: bridge
