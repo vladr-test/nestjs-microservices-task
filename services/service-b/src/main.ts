@@ -7,6 +7,7 @@ import { RedisModule } from '../../libs/redis/src';
 import { LogsModule } from './logs/logs.module';
 import { EventsModule } from './events/events.module';
 import { ReportsModule } from './reports/reports.module';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 @Module({
   imports: [
@@ -32,6 +33,8 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
+
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   const config = new DocumentBuilder()
     .setTitle('Service B API')

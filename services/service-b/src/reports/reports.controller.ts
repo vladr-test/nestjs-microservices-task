@@ -7,7 +7,12 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiOkResponse,
+  ApiInternalServerErrorResponse,
+} from '@nestjs/swagger';
 import type { Response } from 'express';
 import { ReportsService } from './reports.service';
 import { ReportQueryDto } from './report-query.dto';
@@ -31,6 +36,24 @@ export class ReportsController {
         schema: {
           type: 'string',
           format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    description:
+      'Internal server error during PDF generation - data retrieval failure, chart generation error, or PDF creation error',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 500 },
+        message: {
+          type: 'string',
+          example: 'Internal server error',
+        },
+        error: {
+          type: 'string',
+          example: 'Internal Server Error',
         },
       },
     },

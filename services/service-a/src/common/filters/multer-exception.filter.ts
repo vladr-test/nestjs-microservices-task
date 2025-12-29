@@ -12,14 +12,19 @@ export class MulterExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
 
     if (exception instanceof HttpException) {
       throw exception;
     }
 
+    if (response.headersSent) {
+      return;
+    }
+
     const error =
       exception instanceof Error ? exception : new Error(String(exception));
+
+    response.setHeader('Content-Type', 'application/json');
 
     if (
       error.message &&
@@ -31,7 +36,6 @@ export class MulterExceptionFilter implements ExceptionFilter {
         statusCode: HttpStatus.BAD_REQUEST,
         message: error.message,
         error: 'Bad Request',
-        path: request.url,
       });
       return;
     }
@@ -46,7 +50,6 @@ export class MulterExceptionFilter implements ExceptionFilter {
         message:
           'File size exceeds the maximum limit of 50MB. Please upload a smaller file.',
         error: 'Bad Request',
-        path: request.url,
       });
       return;
     }
@@ -54,7 +57,6 @@ export class MulterExceptionFilter implements ExceptionFilter {
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       message: error.message || 'Internal server error',
       error: 'Internal Server Error',
-      path: request.url,
     });
   }
 }

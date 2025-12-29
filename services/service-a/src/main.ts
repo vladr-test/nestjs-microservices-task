@@ -7,7 +7,7 @@ import { RedisModule } from '../../libs/redis/src';
 import { DataModule } from './data/data.module';
 import { RecordsModule } from './records/records.module';
 import { EventsModule } from './events/events.module';
-import { MulterExceptionFilter } from './common/filters/multer-exception.filter';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 @Module({
   imports: [
@@ -34,7 +34,7 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalFilters(new MulterExceptionFilter());
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   const config = new DocumentBuilder()
     .setTitle('Service A API')

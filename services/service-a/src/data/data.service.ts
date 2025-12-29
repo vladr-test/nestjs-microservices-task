@@ -2,20 +2,20 @@ import {
   Injectable,
   Logger,
   BadRequestException,
-  GatewayTimeoutException,
-  NotFoundException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import axios, { AxiosError, AxiosResponse } from 'axios';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import ExcelJS from 'exceljs';
 import { FileFormat } from './fetch-data.dto';
+import { HttpService } from '../common/services/http.service';
 
 @Injectable()
 export class DataService {
   private readonly logger = new Logger(DataService.name);
   private readonly dataDir = path.join(process.cwd(), 'data');
+
+  constructor(private readonly httpService: HttpService) {}
 
   async ensureDataDirectory() {
     try {
@@ -36,45 +36,7 @@ export class DataService {
       this.validateFilename(filename);
     }
 
-    this.logger.log(`Fetching data from: ${url}`);
-    let response: AxiosResponse<unknown> | undefined;
-    try {
-      response = await axios.get<unknown>(url, {
-        responseType: 'json',
-        timeout: 30000,
-        validateStatus: (status) => status < 500,
-      });
-    } catch (error) {
-      this.handleAxiosError(error as AxiosError, url);
-    }
-
-    if (!response) {
-      throw new InternalServerErrorException(
-        'Failed to fetch data: Unexpected error occurred',
-      );
-    }
-
-    if (response.status >= 400) {
-      if (response.status === 404) {
-        throw new NotFoundException(
-          `The requested URL "${url}" was not found. Please check the URL and try again.`,
-        );
-      }
-      if (response.status >= 500) {
-        throw new GatewayTimeoutException(
-          `The API at "${url}" returned an error (status ${response.status}). The server may be temporarily unavailable.`,
-        );
-      }
-      throw new BadRequestException(
-        `The API at "${url}" returned an error (status ${response.status}). Please check the URL and try again.`,
-      );
-    }
-
-    if (response.data === null || response.data === undefined) {
-      throw new BadRequestException(
-        `The API at "${url}" returned empty data. Please ensure the API returns valid JSON data.`,
-      );
-    }
+    const response = await this.httpService.get<unknown>(url);
 
     let data: unknown[];
     try {
@@ -129,44 +91,6 @@ export class DataService {
         'Filename must be between 1 and 50 characters long',
       );
     }
-  }
-
-  private handleAxiosError(error: AxiosError, url: string): never {
-    if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
-      throw new NotFoundException(
-        `Cannot connect to "${url}". Please check if the URL is correct and the server is accessible.`,
-      );
-    }
-    if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') {
-      throw new GatewayTimeoutException(
-        `Request to "${url}" timed out after 30 seconds. The server may be slow or unresponsive. Please try again later.`,
-      );
-    }
-    if (error.code === 'ERR_INVALID_URL') {
-      throw new BadRequestException(
-        `Invalid URL format: "${url}". Please provide a valid HTTP or HTTPS URL.`,
-      );
-    }
-    if (error.response) {
-      const status = error.response.status;
-      if (status === 404) {
-        throw new NotFoundException(
-          `The requested URL "${url}" was not found (404). Please check the URL.`,
-        );
-      }
-      if (status >= 500) {
-        throw new GatewayTimeoutException(
-          `The API at "${url}" returned an error (${status}). The server may be temporarily unavailable.`,
-        );
-      }
-      throw new BadRequestException(
-        `The API at "${url}" returned an error (${status}). Please check the URL and try again.`,
-      );
-    }
-
-    throw new BadRequestException(
-      `Failed to fetch data from "${url}": ${error.message}. Please verify the URL is correct and accessible.`,
-    );
   }
 
   private async saveAsJson(data: any[], filename: string): Promise<string> {
