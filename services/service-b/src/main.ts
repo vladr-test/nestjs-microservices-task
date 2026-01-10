@@ -8,6 +8,8 @@ import { LogsModule } from './logs/logs.module';
 import { EventsModule } from './events/events.module';
 import { ReportsModule } from './reports/reports.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { TracingInterceptor } from './common/interceptors/tracing.interceptor';
+import { TracingLogger } from './common/services/tracing-logger.service';
 
 @Module({
   imports: [
@@ -35,6 +37,11 @@ async function bootstrap() {
   );
 
   app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalInterceptors(new TracingInterceptor());
+
+  const instanceId =
+    process.env.INSTANCE_ID || `service-b-${Date.now().toString(36)}`;
+  TracingLogger.setInstanceId(instanceId);
 
   const config = new DocumentBuilder()
     .setTitle('Service B API')

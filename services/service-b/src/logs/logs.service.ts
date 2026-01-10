@@ -8,6 +8,10 @@ export interface LogEntry {
   timestamp: number;
   service: string;
   createdAt: Date;
+  correlationId?: string;
+  messageId?: string;
+  instanceId?: string;
+  processedBy?: string;
 }
 
 @Injectable()
@@ -24,6 +28,14 @@ export class LogsService implements OnModuleInit {
     await collection.createIndex({ event: 1 });
     await collection.createIndex({ service: 1 });
     await collection.createIndex({ createdAt: -1 });
+    await collection.createIndex(
+      { correlationId: 1 },
+      { unique: true, sparse: true },
+    );
+    await collection.createIndex(
+      { messageId: 1 },
+      { unique: true, sparse: true },
+    );
 
     this.logger.log('Logs service initialized with indexes');
   }
@@ -35,7 +47,28 @@ export class LogsService implements OnModuleInit {
       _id: new ObjectId(),
       createdAt: new Date(entry.timestamp),
     });
-    this.logger.debug(`Log created: ${entry.event}`);
+  }
+
+  async isMessageProcessed(
+    correlationId?: string,
+    messageId?: string,
+  ): Promise<boolean> {
+    if (!correlationId && !messageId) {
+      return false;
+    }
+
+    const collection = this.mongoService.getCollection(this.collectionName);
+    const filter: { correlationId?: string; messageId?: string } = {};
+
+    if (correlationId) {
+      filter.correlationId = correlationId;
+    }
+    if (messageId) {
+      filter.messageId = messageId;
+    }
+
+    const count = await collection.countDocuments(filter);
+    return count > 0;
   }
 
   async queryLogs(

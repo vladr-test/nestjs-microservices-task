@@ -10,7 +10,9 @@ import {
   InternalServerErrorException,
   Logger,
   UseFilters,
+  Req,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import {
@@ -125,7 +127,7 @@ export class DataController {
       },
     },
   })
-  async fetchData(@Body() dto: FetchDataDto) {
+  async fetchData(@Body() dto: FetchDataDto, @Req() request: Request) {
     const startTime = Date.now();
     const result = await this.dataService.fetchAndSaveData(
       dto.url,
@@ -134,13 +136,19 @@ export class DataController {
     );
 
     try {
-      await this.eventsService.publishApiAction('DATA_FETCHED', {
-        url: dto.url,
-        format: dto.format,
-        filepath: result.filepath,
-        recordCount: result.recordCount,
-        duration: Date.now() - startTime,
-      });
+      const correlationId = (request as Request & { correlationId?: string })
+        .correlationId;
+      await this.eventsService.publishApiAction(
+        'DATA_FETCHED',
+        {
+          url: dto.url,
+          format: dto.format,
+          filepath: result.filepath,
+          recordCount: result.recordCount,
+          duration: Date.now() - startTime,
+        },
+        correlationId,
+      );
     } catch (eventError) {
       this.logger.error('Failed to publish event:', eventError);
     }
@@ -261,7 +269,10 @@ export class DataController {
       },
     },
   })
-  async uploadFile(@UploadedFile() file: Express.Multer.File | undefined) {
+  async uploadFile(
+    @UploadedFile() file: Express.Multer.File | undefined,
+    @Req() request: Request,
+  ) {
     const startTime = Date.now();
 
     if (!file) {
@@ -324,13 +335,19 @@ export class DataController {
     }
 
     try {
-      await this.eventsService.publishApiAction('FILE_UPLOADED', {
-        filename: file.originalname,
-        filepath,
-        recordCount,
-        insertedCount,
-        duration: Date.now() - startTime,
-      });
+      const correlationId = (request as Request & { correlationId?: string })
+        .correlationId;
+      await this.eventsService.publishApiAction(
+        'FILE_UPLOADED',
+        {
+          filename: file.originalname,
+          filepath,
+          recordCount,
+          insertedCount,
+          duration: Date.now() - startTime,
+        },
+        correlationId,
+      );
     } catch (eventError) {
       this.logger.error('Failed to publish FILE_UPLOADED event:', eventError);
     }

@@ -1,4 +1,5 @@
-import { Controller, Get, Query, Param } from '@nestjs/common';
+import { Controller, Get, Query, Param, Req } from '@nestjs/common';
+import { Request } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -63,7 +64,7 @@ export class RecordsController {
       },
     },
   })
-  async search(@Query() dto: SearchDto) {
+  async search(@Query() dto: SearchDto, @Req() request: Request) {
     const startTime = Date.now();
     const result = await this.recordsService.search(
       dto.q,
@@ -73,14 +74,20 @@ export class RecordsController {
       dto.sortOrder,
     );
 
-    await this.eventsService.publishApiAction('RECORDS_SEARCHED', {
-      query: dto.q,
-      page: dto.page,
-      limit: dto.limit,
-      resultCount: result.data.length,
-      total: result.total,
-      duration: Date.now() - startTime,
-    });
+    const correlationId = (request as Request & { correlationId?: string })
+      .correlationId;
+    await this.eventsService.publishApiAction(
+      'RECORDS_SEARCHED',
+      {
+        query: dto.q,
+        page: dto.page,
+        limit: dto.limit,
+        resultCount: result.data.length,
+        total: result.total,
+        duration: Date.now() - startTime,
+      },
+      correlationId,
+    );
 
     return result;
   }
@@ -134,12 +141,19 @@ export class RecordsController {
   })
   async getById(
     @Param('id') id: string,
+    @Req() request: Request,
   ): Promise<Record<string, unknown> | null> {
     const result = await this.recordsService.getById(id);
 
-    await this.eventsService.publishApiAction('RECORD_RETRIEVED', {
-      recordId: id,
-    });
+    const correlationId = (request as Request & { correlationId?: string })
+      .correlationId;
+    await this.eventsService.publishApiAction(
+      'RECORD_RETRIEVED',
+      {
+        recordId: id,
+      },
+      correlationId,
+    );
 
     return result;
   }
