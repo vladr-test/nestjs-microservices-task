@@ -143,6 +143,7 @@ export class RecordsController {
     @Param('id') id: string,
     @Req() request: Request,
   ): Promise<Record<string, unknown> | null> {
+    const startTime = Date.now();
     const result = await this.recordsService.getById(id);
 
     const correlationId = (request as Request & { correlationId?: string })
@@ -151,6 +152,7 @@ export class RecordsController {
       'RECORD_RETRIEVED',
       {
         recordId: id,
+        duration: Date.now() - startTime,
       },
       correlationId,
     );

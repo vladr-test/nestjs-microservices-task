@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { RedisService } from '../../../libs/redis/src';
 import { randomUUID } from 'crypto';
+import * as os from 'os';
 import { TracingLogger } from '../common/services/tracing-logger.service';
 
 @Injectable()
@@ -12,8 +13,16 @@ export class EventsService {
   private readonly instanceId: string;
 
   constructor(private readonly redisService: RedisService) {
+    const hostname = process.env.HOSTNAME || os.hostname();
+    const replicaMatch = hostname.match(/-(\d+)$/);
+    const replicaNumber = replicaMatch ? replicaMatch[1] : null;
+
     this.instanceId =
-      process.env.INSTANCE_ID || `service-a-${randomUUID().substring(0, 8)}`;
+      process.env.INSTANCE_ID ||
+      TracingLogger.getInstanceId() ||
+      (replicaNumber
+        ? `service-a-${replicaNumber}`
+        : `service-a-${randomUUID().substring(0, 8)}`);
     this.logger.log(
       `EventsService initialized with instance ID: ${this.instanceId}`,
     );
@@ -36,7 +45,6 @@ export class EventsService {
     };
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
       const messageId: string = await this.redisService.streamAdd(
         this.eventsStream,
         {
@@ -72,18 +80,36 @@ export class EventsService {
           service: this.serviceName,
           action,
         });
+        TracingLogger.log(
+          'Time series created or already exists',
+          {
+            correlationId: eventCorrelationId,
+            requestId: eventCorrelationId,
+            instanceId: this.instanceId,
+            service: this.serviceName,
+          },
+          {
+            timeseriesKey,
+            action,
+          },
+        );
       } catch (error: unknown) {
-        if (
-          error &&
-          typeof error === 'object' &&
-          'message' in error &&
-          typeof error.message === 'string' &&
-          !error.message.includes('BUSYKEY')
-        ) {
-          this.logger.debug(
-            `Time series might already exist: ${timeseriesKey}`,
-          );
-        }
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        TracingLogger.warn(
+          'Failed to create time series (may already exist)',
+          {
+            correlationId: eventCorrelationId,
+            requestId: eventCorrelationId,
+            instanceId: this.instanceId,
+            service: this.serviceName,
+          },
+          {
+            timeseriesKey,
+            action,
+            error: errorMessage,
+          },
+        );
       }
 
       const dataObj = data as { duration?: number } | undefined;
@@ -91,13 +117,40 @@ export class EventsService {
         dataObj && typeof dataObj.duration === 'number' ? dataObj.duration : 1;
       try {
         await this.redisService.timeseriesAdd(timeseriesKey, timestamp, value);
+        TracingLogger.log(
+          'Added data point to time series',
+          {
+            correlationId: eventCorrelationId,
+            requestId: eventCorrelationId,
+            instanceId: this.instanceId,
+            service: this.serviceName,
+          },
+          {
+            timeseriesKey,
+            action,
+            timestamp,
+            value,
+          },
+        );
       } catch (error: unknown) {
         const errorMessage =
-          error && typeof error === 'object' && 'message' in error
-            ? String(error.message)
-            : 'Unknown error';
-        this.logger.debug(
-          `Failed to add to time series ${timeseriesKey}: ${errorMessage}`,
+          error instanceof Error ? error.message : String(error);
+        TracingLogger.error(
+          'Failed to add to time series',
+          error instanceof Error ? error.stack : undefined,
+          {
+            correlationId: eventCorrelationId,
+            requestId: eventCorrelationId,
+            instanceId: this.instanceId,
+            service: this.serviceName,
+          },
+          {
+            timeseriesKey,
+            action,
+            timestamp,
+            value,
+            error: errorMessage,
+          },
         );
       }
     } catch (error: unknown) {

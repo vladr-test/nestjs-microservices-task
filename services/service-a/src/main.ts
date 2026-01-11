@@ -10,6 +10,7 @@ import { EventsModule } from './events/events.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TracingInterceptor } from './common/interceptors/tracing.interceptor';
 import { TracingLogger } from './common/services/tracing-logger.service';
+import * as os from 'os';
 
 @Module({
   imports: [
@@ -39,8 +40,23 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new TracingInterceptor());
 
+  let replicaNumber: string | null = null;
+
+  const hostname = process.env.HOSTNAME || os.hostname();
+
+  const replicaMatch = hostname.match(/service-a-(\d+)$/);
+  if (replicaMatch) {
+    replicaNumber = replicaMatch[1];
+  } else {
+    const numericMatch = hostname.match(/-(\d+)$/);
+    replicaNumber = numericMatch ? numericMatch[1] : null;
+  }
+
   const instanceId =
-    process.env.INSTANCE_ID || `service-a-${Date.now().toString(36)}`;
+    process.env.INSTANCE_ID ||
+    (replicaNumber
+      ? `service-a-${replicaNumber}`
+      : `service-a-${Date.now().toString(36)}-${process.pid}`);
   TracingLogger.setInstanceId(instanceId);
 
   const config = new DocumentBuilder()

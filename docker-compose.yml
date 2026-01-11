@@ -65,6 +65,7 @@ services:
       MONGODB_URI: mongodb://mongo:27017
       MONGODB_DB_NAME: service_a_db
       REDIS_URI: redis://redis:6379
+    hostname: service-a
     volumes:
       - ./services/service-a/data:/app/services/service-a/data
       - ./services/service-a/uploads:/app/services/service-a/uploads

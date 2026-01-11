@@ -40,13 +40,31 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     const args: any[] = ['TS.ADD', key, timestamp.toString(), value.toString()];
     
     try {
-      const result = await this.client.sendCommand(args);
-      return result as number;
-    } catch (error: any) {
-      if (error?.message?.includes('unknown command')) {
-        throw new Error('RedisTimeSeries module not loaded. Please ensure redis-stack-server is running.');
+      const result: unknown = await this.client.sendCommand(args);
+      if (typeof result === 'number') {
+        return result;
       }
-      throw error;
+      if (typeof result === 'string') {
+        const parsed = parseInt(result, 10);
+        if (!isNaN(parsed)) {
+          return parsed;
+        }
+      }
+      throw new Error(`Unexpected result type from TS.ADD: ${typeof result}`);
+    } catch (error: unknown) {
+      if (
+        error instanceof Error &&
+        error.message?.includes('unknown command')
+      ) {
+        throw new Error(
+          'RedisTimeSeries module not loaded. Please ensure redis-stack-server is running.',
+        );
+      }
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new Error(
+        `Failed to add to time series ${key}: ${errorMessage}`,
+      );
     }
   }
 
@@ -68,8 +86,27 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       }
     }
 
-    const result = await this.client.sendCommand(args);
-    return result as string;
+    try {
+      const result: unknown = await this.client.sendCommand(args);
+      if (typeof result === 'string') {
+        return result;
+      }
+      return String(result);
+    } catch (error: unknown) {
+      if (
+        error instanceof Error &&
+        (error.message?.includes('already exists') ||
+          error.message?.includes('BUSYKEY') ||
+          error.message?.includes('TSDB'))
+      ) {
+        return 'OK';
+      }
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new Error(
+        `Failed to create time series ${key}: ${errorMessage}`,
+      );
+    }
   }
 
   async timeseriesGet(key: string): Promise<[number, number] | null> {
